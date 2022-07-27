@@ -20,7 +20,6 @@ app.use(express.urlencoded({ extended: true }));
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:3001",
-  //"http://isquaretz.herokuapp.com",
   "https://isquaretz.herokuapp.com",
   "https://isquaretz.nezatech.co.tz",
 ];

@@ -86,6 +86,47 @@ exports.signin = async (req, res) => {
   }
 };
 
+exports.changePassword = async (req, res) => {
+  let { new_password, current_password } = req.body;
+  const { userUuid } = req;
+  try {
+    let user = await models.User.findOne({
+      where: { uuid: userUuid },
+    });
+    if (!user) {
+      return res.status(401).send({ message: "User Not found." });
+    }
+    var passwordIsValid = bcrypt.compareSync(current_password, user.password);
+    if (!passwordIsValid) {
+      return res.status(401).send({
+        accessToken: null,
+        message: "Invalid Password!",
+      });
+    }
+
+    //Update password
+    await user.update({
+      password: bcrypt.hashSync(new_password, 8),
+    });
+
+    var token = jwt.sign({ uuid: user.uuid }, process.env.JWT_SECRET, {
+      expiresIn: 86400, // 24 hours
+    });
+
+    return res
+      .cookie(process.env.JWT_AUTH_HEADER, `Bearer ${token}`, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "None",
+      })
+      .status(200)
+      .json({ message: "Logged in successfully 😊 👌" });
+  } catch (error) {
+    console.log("Error: ", error.message);
+    return res.status(400).send({ message: error.message });
+  }
+};
+
 exports.signout = (req, res) => {
   return res
     .cookie(process.env.JWT_AUTH_HEADER, "", {

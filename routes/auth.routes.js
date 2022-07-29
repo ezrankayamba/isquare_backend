@@ -5,6 +5,7 @@ module.exports = {
     app.post("/api/auth/signin", controller.signin);
     app.get("/api/auth/me", controller.me);
     app.post("/api/auth/signout", controller.signout);
+    app.post("/api/auth/changepassword", controller.changePassword);
     // app.get("/api/auth/verify/:hash", controller.verify);
   },
 };

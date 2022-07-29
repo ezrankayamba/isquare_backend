@@ -288,7 +288,7 @@ exports.updateProfile = async (req, res) => {
           description: postData.fields.description,
         });
       } else if (roleName === "Incubatee") {
-        let inc = await models.Hub.findOne({
+        let inc = await models.Incubatee.findOne({
           where: {
             owner_id: user.id,
           },

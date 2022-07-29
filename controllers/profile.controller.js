@@ -83,7 +83,6 @@ exports.profiles = async (req, res) => {
 exports.getMyProfiles = async (req, res) => {
   const { userUuid } = req;
   const { roleId } = req.params;
-  console.log("Role Id: ", roleId);
   let user = await models.User.findOne({
     where: {
       uuid: userUuid,

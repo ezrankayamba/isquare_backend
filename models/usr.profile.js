@@ -36,6 +36,12 @@ module.exports = (sequelize, DataTypes) => {
       role_id: {
         type: DataTypes.INTEGER,
       },
+      status: {
+        type: DataTypes.STRING,
+      },
+      approval: {
+        type: DataTypes.STRING,
+      },
     },
     {
       sequelize,

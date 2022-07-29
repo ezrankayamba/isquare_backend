@@ -2,10 +2,14 @@
 const { Model } = require("sequelize");
 module.exports = (sequelize, DataTypes) => {
   class Service extends Model {
-    static associate({ User }) {
+    static associate({ User, Profile }) {
       this.belongsTo(User, {
         foreignKey: "owner_id",
         as: "owner",
+      });
+      this.belongsTo(Profile, {
+        foreignKey: "profile_id",
+        as: "profile",
       });
     }
     toJSON() {

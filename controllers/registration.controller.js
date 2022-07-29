@@ -6,6 +6,7 @@ var crypto = require("crypto");
 const path = require("path"),
   fs = require("fs");
 const { sendEmail } = require("../helpers/mailer");
+const { insertOrUpdate } = require("../helpers/db");
 
 const UPLOAD_DIR = path.resolve(__dirname, "..", "..", "uploads");
 
@@ -14,25 +15,27 @@ const sendVerification = async (
   action = "SIGNUP",
   origin = "http://localhost:3000"
 ) => {
-  let seed = crypto.randomBytes(20);
-  let hash = crypto
-    .createHash("sha256")
-    .update(seed + user.email)
-    .digest("hex");
-  await models.Verification.create({
-    hash,
-    user_id: user.id,
-    action,
-  });
+  await sequelize.transaction(async (transaction) => {
+    let seed = crypto.randomBytes(20);
+    let hash = crypto
+      .createHash("sha256")
+      .update(seed + user.email)
+      .digest("hex");
+    await models.Verification.create({
+      hash,
+      user_id: user.id,
+      action,
+    });
 
-  //3. Send verification Link to email
-  let message = `
+    //3. Send verification Link to email
+    let message = `
     Congraturations!<br/>
     You have just registered on iSquareTZ. Kindly complete verification by clicking on below link.<br/><br/>
     <a href="${origin}/auth/verify-email/${hash}">Verify Now</a>
     `;
 
-  sendEmail(user.email, "Email Verification", message);
+    sendEmail(user.email, "Email Verification", message);
+  });
 };
 
 const sendForgotPassword = async (user, origin = "http://localhost:3000") => {
@@ -116,6 +119,7 @@ exports.createAccount = async (req, res) => {
   try {
     await sequelize.transaction(async (transaction) => {
       let postData = req.body;
+      let newUser = false;
       //1. Create User
       let roleName = postData.role;
       let role = await models.Role.findOne({
@@ -159,6 +163,22 @@ exports.createAccount = async (req, res) => {
           },
           { transaction }
         );
+        newUser = false;
+      }
+      let profile = await models.Profile.findOne({
+        where: {
+          role_id: role.id,
+          owner_id: user.id,
+        },
+      });
+      if (!profile) {
+        profile = await models.Profile.create(
+          {
+            role_id: role.id,
+            owner_id: user.id,
+          },
+          { transaction }
+        );
       }
 
       //2. Register profile
@@ -195,6 +215,7 @@ exports.createAccount = async (req, res) => {
           { transaction }
         );
       } else {
+        //Other profiles
         let data = { ...postData.fields, owner_id: user.id };
         data.hub_id = undefined;
         let service = await models.Service.create(
@@ -205,21 +226,9 @@ exports.createAccount = async (req, res) => {
           },
           { transaction }
         );
-      }
-      let profile = await models.Profile.findOne({
-        where: {
-          role_id: role.id,
-          owner_id: user.id,
-        },
-      });
-      if (!profile) {
-        profile = await models.Profile.create(
-          {
-            role_id: role.id,
-            owner_id: user.id,
-          },
-          { transaction }
-        );
+        profile.update({
+          approval: "APPROVED",
+        });
       }
 
       let fieldsArr = postData.fields;
@@ -234,7 +243,7 @@ exports.createAccount = async (req, res) => {
 
       //3. Send verification email
       const origin = req.headers.origin;
-      sendVerification(user, "SIGNUP", origin);
+      if (newUser) sendVerification(user, "SIGNUP", origin);
       res.send({
         message: "Account created successfully!",
         email: user.email,
@@ -249,6 +258,133 @@ exports.createAccount = async (req, res) => {
   }
 };
 
+exports.updateProfile = async (req, res) => {
+  //Update Profile
+  try {
+    let profileId = req.params.profileId;
+
+    await sequelize.transaction(async (transaction) => {
+      let postData = req.body;
+      const { userUuid } = req;
+      let user = await models.User.findOne({
+        where: {
+          uuid: userUuid,
+        },
+        include: {
+          model: models.Profile,
+          as: "profiles",
+          required: true,
+          where: {
+            id: profileId,
+          },
+          include: [
+            {
+              model: models.Role,
+              as: "role",
+            },
+          ],
+        },
+      });
+
+      if (!user) {
+        throw "You must have logged in and update only your profile";
+      }
+
+      let userFields = [
+        "first_name",
+        "last_name",
+        "password",
+        "password_confirm",
+        "email",
+      ];
+      delete postData.fields["password_confirm"];
+      // let userData = { role_id: role.id };
+      // userFields.forEach((f) => {
+      //   let value = postData.fields[f];
+      //   userData[f] = f === "password" ? passwordHash(value || "") : value;
+      //   delete postData.fields[f];
+      // });
+
+      let profile = user.profiles[0];
+      let roleName = profile.role.name;
+
+      //2. Register profile
+      if (roleName === "Hub Manager") {
+        let hub = await models.Hub.findOne({
+          where: {
+            owner_id: user.id,
+          },
+        });
+        await hub.update({
+          name: postData.fields.name,
+          description: postData.fields.description,
+        });
+      } else if (roleName === "Incubatee") {
+        let inc = await models.Hub.findOne({
+          where: {
+            owner_id: user.id,
+          },
+        });
+        let hubId = postData.fields.hubId;
+        await inc.update({
+          hub_id: hubId,
+          name: postData.fields.name || null,
+          description: postData.fields.description,
+          owner_id: user.id,
+        });
+        await models.Enrollment.create(
+          {
+            hub_id: hubId,
+            incubatee_id: inc.id,
+            status: "Requested",
+          },
+          { transaction }
+        );
+      } else {
+        //Other profiles
+        let service = await insertOrUpdate(
+          models.Service,
+          {
+            name: postData.fields.name,
+            description: postData.fields.description,
+            owner_id: user.id,
+            profile_id: profileId,
+          },
+          {
+            owner_id: user.id,
+            profile_id: profileId,
+          }
+        );
+      }
+
+      let fieldsArr = postData.fields;
+      delete fieldsArr["name"];
+      delete fieldsArr["description"];
+      await models.Field.destroy({
+        where: {
+          profile_id: profileId,
+        },
+      });
+      await models.Field.bulkCreate(
+        Object.entries(fieldsArr).map(([key, value]) =>
+          createRecord(profile, key, value)
+        ),
+        { transaction, include: [{ model: models.FieldValue, as: "values" }] }
+      );
+
+      res.send({
+        message: "Account created successfully!",
+        email: user.email,
+      });
+    });
+  } catch (err) {
+    console.error("Error: ", err);
+    // console.dir(err.message);
+    res.status(400).send({
+      message: err,
+    });
+  }
+};
 exports.verify = async (req, res) => {
   let { hash } = req.params;
   try {
@@ -280,19 +416,6 @@ exports.verify = async (req, res) => {
     });
   }
 };
-
-// exports.testVerify = async (req, res) => {
-//   let user = await models.User.findOne({
-//     where: {
-//       email: "ezrankayamba@gmail.com",
-//     },
-//   });
-//   await sendVerification(user, "SIGNUP", req.headers.origin);
-
-//   res.send({
-//     message: "Email sent sent successfully!",
-//   });
-// };
 
 exports.checkUniqueEmail = async (req, res) => {
   try {

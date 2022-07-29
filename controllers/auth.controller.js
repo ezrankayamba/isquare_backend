@@ -49,7 +49,6 @@ exports.signin = async (req, res) => {
     let user = await models.User.findOne({
       where: { email },
     });
-    console.log("User: ", user);
     if (!user) {
       return res.status(401).send({ message: "User Not found." });
     }

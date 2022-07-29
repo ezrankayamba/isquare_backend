@@ -6,7 +6,10 @@ const Sequelize = require("sequelize");
 const basename = path.basename(__filename);
 const env = process.env.NODE_ENV || "development";
 const config = require(__dirname + "/../config/config.json")[env];
+const cls = require("cls-hooked");
 const db = {};
+const namespace = cls.createNamespace("my-very-own-namespace");
+Sequelize.useCLS(namespace);
 
 let sequelize;
 if (config.use_env_variable) {

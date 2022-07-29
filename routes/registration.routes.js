@@ -15,5 +15,6 @@ module.exports = {
     app.post("/api/registration/resetpassword/:hash", controller.resetPassword);
     app.get("/api/registration/statistics", controller.getStatistics);
     app.post("/api/profile/update/:profileId", controller.updateProfile);
+    app.post("/api/profile/delete/:profileId", controller.deleteProfile);
   },
 };

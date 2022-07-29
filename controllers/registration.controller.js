@@ -6,7 +6,6 @@ var crypto = require("crypto");
 const path = require("path"),
   fs = require("fs");
 const { sendEmail } = require("../helpers/mailer");
-const { insertOrUpdate } = require("../helpers/db");
 
 const UPLOAD_DIR = path.resolve(__dirname, "..", "..", "uploads");
 
@@ -15,7 +14,7 @@ const sendVerification = async (
   action = "SIGNUP",
   origin = "http://localhost:3000"
 ) => {
-  await sequelize.transaction(async (transaction) => {
+  await sequelize.transaction(async () => {
     let seed = crypto.randomBytes(20);
     let hash = crypto
       .createHash("sha256")
@@ -119,7 +118,6 @@ exports.createAccount = async (req, res) => {
   try {
     await sequelize.transaction(async (transaction) => {
       let postData = req.body;
-      let newUser = false;
       //1. Create User
       let roleName = postData.role;
       let role = await models.Role.findOne({
@@ -163,8 +161,8 @@ exports.createAccount = async (req, res) => {
           },
           { transaction }
         );
-        newUser = false;
       }
+
       let profile = await models.Profile.findOne({
         where: {
           role_id: role.id,
@@ -185,14 +183,6 @@ exports.createAccount = async (req, res) => {
       if (roleName === "Hub Manager") {
         let data = { ...postData.fields, owner_id: user.id };
         data.hub_id = undefined;
-        let hub = await models.Hub.create(
-          {
-            name: postData.fields.name,
-            description: postData.fields.description,
-            owner_id: user.id,
-          },
-          { transaction }
-        );
       } else if (roleName === "Incubatee") {
         let data = { ...postData.fields, owner_id: user.id };
         let hubId = postData.fields.hubId;
@@ -218,14 +208,6 @@ exports.createAccount = async (req, res) => {
         //Other profiles
         let data = { ...postData.fields, owner_id: user.id };
         data.hub_id = undefined;
-        let service = await models.Service.create(
-          {
-            name: postData.fields.name,
-            description: postData.fields.description,
-            owner_id: user.id,
-          },
-          { transaction }
-        );
         profile.update({
           approval: "APPROVED",
         });
@@ -243,7 +225,7 @@ exports.createAccount = async (req, res) => {
 
       //3. Send verification email
       const origin = req.headers.origin;
-      if (newUser) sendVerification(user, "SIGNUP", origin);
+      if (!user.is_verified) sendVerification(user, "SIGNUP", origin);
       res.send({
         message: "Account created successfully!",
         email: user.email,
@@ -251,7 +233,6 @@ exports.createAccount = async (req, res) => {
     });
   } catch (err) {
     console.error("Error: ", err);
-    // console.dir(err.message);
     res.status(400).send({
       message: err,
     });
@@ -290,20 +271,7 @@ exports.updateProfile = async (req, res) => {
         throw "You must have logged in and update only your profile";
       }
 
-      let userFields = [
-        "first_name",
-        "last_name",
-        "password",
-        "password_confirm",
-        "email",
-      ];
       delete postData.fields["password_confirm"];
-      // let userData = { role_id: role.id };
-      // userFields.forEach((f) => {
-      //   let value = postData.fields[f];
-      //   userData[f] = f === "password" ? passwordHash(value || "") : value;
-      //   delete postData.fields[f];
-      // });
 
       let profile = user.profiles[0];
       let roleName = profile.role.name;
@@ -342,19 +310,6 @@ exports.updateProfile = async (req, res) => {
         );
       } else {
         //Other profiles
-        let service = await insertOrUpdate(
-          models.Service,
-          {
-            name: postData.fields.name,
-            description: postData.fields.description,
-            owner_id: user.id,
-            profile_id: profileId,
-          },
-          {
-            owner_id: user.id,
-            profile_id: profileId,
-          }
-        );
       }
 
       let fieldsArr = postData.fields;
@@ -382,6 +337,103 @@ exports.updateProfile = async (req, res) => {
     // console.dir(err.message);
     res.status(400).send({
       message: err,
+    });
+  }
+};
+exports.deleteProfile = async (req, res) => {
+  //Delete Profile
+  try {
+    let profileId = req.params.profileId;
+
+    await sequelize.transaction(async () => {
+      const { userUuid } = req;
+      let profile = await models.Profile.findOne({
+        where: {
+          id: profileId,
+        },
+        include: {
+          model: models.Role,
+          as: "role",
+        },
+      });
+      if (!profile) {
+        res.send({
+          message: `Profile with id ${profileId} not found, might have already been deleted!`,
+        });
+        return;
+      }
+      let roleName = profile.role.name;
+      if (["Hub Manager", "Incubatee"].includes(roleName)) {
+        if (roleName == "Hub Manager")
+          models.Hub.destroy({
+            where: {
+              owner_id: profile.owner_id,
+            },
+          });
+
+        if (roleName == "Incubatee")
+          models.Incubatee.destroy({
+            where: {
+              owner_id: profile.owner_id,
+            },
+          });
+      } else {
+        models.Service.destroy({
+          where: {
+            profile_id: profileId,
+          },
+        });
+      }
+      models.Profile.destroy({
+        where: {
+          id: profileId,
+        },
+      });
+      //If user has no any other profile, delete user
+      let user = await models.User.findOne({
+        where: {
+          uuid: userUuid,
+        },
+        include: {
+          model: models.Profile,
+          as: "profiles",
+        },
+      });
+
+      let email = user ? user.email : null;
+      if (user) {
+        if (user.profiles.length <= 1) {
+          models.User.destroy({
+            where: {
+              uuid: userUuid,
+            },
+          });
+        } else {
+          console.log("There are still profiles: ", user.profiles.length);
+        }
+      } else {
+        console.log("No user?");
+      }
+
+      //Notify user:
+      if (email) {
+        let message = `
+        You have deleted your ${roleName} profile<br/>
+        If not you who deleted this kindly contact iSquareTZ admin for support!<br/><br/>
+        `;
+
+        sendEmail(email, "Profile Deletion", message);
+      }
+
+      res.send({
+        message: `Profile "${profile.role.name}" with id ${profileId} deleted successfully!`,
+      });
+    });
+  } catch (error) {
+    console.log("Error: ", error);
+    res.send({
+      status: -1,
+      message: error,
     });
   }
 };

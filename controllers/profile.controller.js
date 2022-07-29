@@ -16,6 +16,7 @@ async function profileInfo(p) {
   switch (p.role.name) {
     case "Hub Manager":
       let hubs = await owner.getHubs();
+      console.log("Hubs: ", hubs);
       result = {
         ...mashall(p),
         entity: hubs.length ? mashall(hubs[0]) : undefined,
@@ -89,7 +90,7 @@ exports.getMyProfiles = async (req, res) => {
     },
   });
   let where = {
-    owner_id: user.id,
+    owner_id: user ? user.id : "None",
   };
   if (roleId) {
     where.role_id = roleId;

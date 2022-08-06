@@ -14,5 +14,6 @@ module.exports = {
     app.delete("/api/profile/:profileId", controller.unRegisterProfile);
     app.get("/api/profile/myprofiles", controller.getMyProfiles);
     app.get("/api/profile/myprofiles/:roleId", controller.getMyProfiles);
+    app.get("/api/profile/files/:fileName", controller.getProfileFile);
   },
 };

@@ -56,6 +56,10 @@ const sendForgotPassword = async (user, origin = "http://localhost:3000") => {
   sendEmail(user.email, "Forgot Password", message);
 };
 
+exports.regFilePath = (file) => {
+  return path.join(UPLOAD_DIR, file);
+};
+
 const saveBase64File = (data, file) => {
   let base64Data = data.split(";base64,").pop();
 
@@ -79,8 +83,12 @@ function createValue(value) {
     ];
   }
   if (value.type === "FILE") {
-    let fileName = `${Date.now()}_${value.name}`;
-    saveBase64File(value.value, fileName);
+    console.log(value);
+    let isNewFile = value.value;
+    let fileName = isNewFile
+      ? `${Date.now()}_${value.name}`
+      : value.existingName;
+    if (isNewFile) saveBase64File(value.value, fileName);
     val = [
       {
         value: fileName,
@@ -283,10 +291,13 @@ exports.updateProfile = async (req, res) => {
             owner_id: user.id,
           },
         });
-        await hub.update({
-          name: postData.fields.name,
-          description: postData.fields.description,
-        });
+        await hub.update(
+          {
+            name: postData.fields.name,
+            description: postData.fields.description,
+          },
+          { transaction }
+        );
       } else if (roleName === "Incubatee") {
         let inc = await models.Incubatee.findOne({
           where: {
@@ -294,12 +305,15 @@ exports.updateProfile = async (req, res) => {
           },
         });
         let hubId = postData.fields.hubId;
-        await inc.update({
-          hub_id: hubId,
-          name: postData.fields.name || null,
-          description: postData.fields.description,
-          owner_id: user.id,
-        });
+        await inc.update(
+          {
+            hub_id: hubId,
+            name: postData.fields.name || null,
+            description: postData.fields.description,
+            owner_id: user.id,
+          },
+          { transaction }
+        );
         await models.Enrollment.create(
           {
             hub_id: hubId,
@@ -315,11 +329,14 @@ exports.updateProfile = async (req, res) => {
       let fieldsArr = postData.fields;
       delete fieldsArr["name"];
       delete fieldsArr["description"];
-      await models.Field.destroy({
-        where: {
-          profile_id: profileId,
+      await models.Field.destroy(
+        {
+          where: {
+            profile_id: profileId,
+          },
         },
-      });
+        { transaction }
+      );
       await models.Field.bulkCreate(
         Object.entries(fieldsArr).map(([key, value]) =>
           createRecord(profile, key, value)

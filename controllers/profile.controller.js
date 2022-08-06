@@ -2,6 +2,7 @@ const { sequelize } = require("../models");
 const models = require("../models");
 const path = require("path"),
   fs = require("fs");
+const { regFilePath } = require("./registration.controller");
 
 const UPLOAD_DIR = path.resolve(__dirname, "..", "..", "uploads");
 console.log("Upload DIR", UPLOAD_DIR);
@@ -31,6 +32,7 @@ async function profileInfo(p) {
       break;
     default:
       let services = await owner.getServices();
+      console.log("Services: ", services);
       result = {
         ...mashall(p),
         entity: services.length ? mashall(services[0]) : undefined,
@@ -44,8 +46,18 @@ async function profileInfo(p) {
 }
 
 exports.download = async (req, res) => {
-  const file = `${__dirname}/upload-folder/dramaticpenguin.MOV`;
+  const file = `${__dirname}/uploads/dramaticpenguin.MOV`;
   res.download(file); // Set disposition and send it.
+};
+
+exports.getProfileFile = async (req, res) => {
+  const { fileName } = req.params;
+  console.log("File name: ", fileName);
+  let path = regFilePath(fileName);
+  var file = fs.readFileSync(path, "binary");
+  res.setHeader("Content-Length", file.length);
+  res.write(file, "binary");
+  res.end();
 };
 
 exports.hubs = async (req, res) => {

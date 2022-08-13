@@ -1,46 +1,38 @@
 "use strict";
 const { Model } = require("sequelize");
 module.exports = (sequelize, DataTypes) => {
-  class Field extends Model {
-    static associate({ Profile, FieldValue }) {
+  class ProfileForm extends Model {
+    static associate({ Profile }) {
       this.belongsTo(Profile, {
         foreignKey: "profile_id",
         as: "profile",
-      });
-      this.hasMany(FieldValue, {
-        foreignKey: "field_id",
-        as: "values",
-        onDelete: "cascade",
       });
     }
     toJSON() {
       return { ...this.get() };
     }
   }
-  Field.init(
+  ProfileForm.init(
     {
       profile_id: {
-        type: DataTypes.INTEGER,
-      },
-      owner_id: {
         type: DataTypes.INTEGER,
       },
       name: {
         type: DataTypes.STRING,
       },
-      type: {
+      category: {
         type: DataTypes.STRING,
       },
-      category: {
+      status: {
         type: DataTypes.STRING,
       },
     },
     {
       sequelize,
-      tableName: "fields",
-      modelName: "Field",
+      tableName: "profile_forms",
+      modelName: "ProfileForm",
       timestamps: false,
     }
   );
-  return Field;
+  return ProfileForm;
 };

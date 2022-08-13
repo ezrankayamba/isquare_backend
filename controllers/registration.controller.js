@@ -197,21 +197,21 @@ exports.createAccount = async (req, res) => {
         data.hub_id = undefined;
         let inc = await models.Incubatee.create(
           {
-            hub_id: hubId,
+            // hub_id: hubId,
             name: postData.fields.name || null,
             description: postData.fields.description,
             owner_id: user.id,
           },
           { transaction }
         );
-        await models.Enrollment.create(
-          {
-            hub_id: hubId,
-            incubatee_id: inc.id,
-            status: "Requested",
-          },
-          { transaction }
-        );
+        // await models.Enrollment.create(
+        //   {
+        //     hub_id: hubId,
+        //     incubatee_id: inc.id,
+        //     status: "Requested",
+        //   },
+        //   { transaction }
+        // );
       } else {
         //Other profiles
         let data = { ...postData.fields, owner_id: user.id };
@@ -307,21 +307,21 @@ exports.updateProfile = async (req, res) => {
         let hubId = postData.fields.hubId;
         await inc.update(
           {
-            hub_id: hubId,
+            // hub_id: hubId,
             name: postData.fields.name || null,
             description: postData.fields.description,
             owner_id: user.id,
           },
           { transaction }
         );
-        await models.Enrollment.create(
-          {
-            hub_id: hubId,
-            incubatee_id: inc.id,
-            status: "Requested",
-          },
-          { transaction }
-        );
+        // await models.Enrollment.create(
+        //   {
+        //     hub_id: hubId,
+        //     incubatee_id: inc.id,
+        //     status: "Requested",
+        //   },
+        //   { transaction }
+        // );
       } else {
         //Other profiles
       }

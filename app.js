@@ -12,6 +12,7 @@ const authRoutes = require("./routes/auth.routes");
 const profileRoutes = require("./routes/profile.routes");
 const commonRoutes = require("./routes/common.routes");
 const registrationRoutes = require("./routes/registration.routes");
+const projectRoutes = require("./routes/project.routes");
 
 const app = express();
 app.use(express.json());
@@ -55,68 +56,11 @@ authRoutes.init(app);
 profileRoutes.init(app);
 commonRoutes.init(app);
 registrationRoutes.init(app);
+projectRoutes.init(app);
 
 app.get("/", async (req, res) => {
   console.log("Ping");
   res.send({ message: "Ping processed successfully" });
-});
-app.get("/users", async (req, res) => {
-  try {
-    const users = await User.findAll({ include: "role" });
-    return res.json(users);
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json(err);
-  }
-});
-app.get("/users/:uuid", async (req, res) => {
-  const uuid = req.params.uuid;
-  try {
-    const user = await User.findOne({
-      where: {
-        uuid,
-      },
-    });
-    return res.json(user);
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json(err);
-  }
-});
-app.post("/users", async (req, res) => {
-  const { name, email, role } = req.body;
-  try {
-    const user = await User.create({ name, email, role });
-    return res.json(user);
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json(err);
-  }
-});
-app.post("/posts", async (req, res) => {
-  const { userUuid, body } = req.body;
-  try {
-    const user = await User.findOne({
-      where: {
-        uuid: userUuid,
-      },
-    });
-    const post = await Post.create({ body, userId: user.id });
-    return res.json(post);
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json(err);
-  }
-});
-app.get("/testdb", async (req, res) => {
-  try {
-    const users = await db.dbSelect("SELECT * FROM users");
-    console.log("Users", users);
-    return res.json(users);
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json(err);
-  }
 });
 app.listen({ port: parseInt(PORT) }, async () => {
   console.log(`Server started at: http://localhost:${PORT}`);

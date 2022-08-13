@@ -17,7 +17,10 @@ if (config.use_env_variable) {
 } else {
   sequelize = new Sequelize(config.database, config.username, config.password, {
     ...config,
-    logging: false,
+    // logging: false,
+    logging: function (str) {
+      console.debug(str);
+    },
   });
 }
 

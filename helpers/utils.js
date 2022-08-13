@@ -30,7 +30,6 @@ function createValue(value) {
     ];
   }
   if (value.type === "FILE") {
-    console.log(value);
     let isNewFile = value.value;
     let fileName = isNewFile
       ? `${Date.now()}_${value.name}`
@@ -42,7 +41,6 @@ function createValue(value) {
       },
     ];
   } else if (value.type === "ITEMS") {
-    console.log(value);
     let items = value.value;
     val = [
       {

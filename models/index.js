@@ -19,7 +19,7 @@ if (config.use_env_variable) {
     ...config,
     // logging: false,
     logging: function (str) {
-      console.debug(str);
+      // console.debug(str);
     },
   });
 }

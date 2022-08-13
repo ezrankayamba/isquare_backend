@@ -2,6 +2,7 @@ const { sequelize } = require("../models");
 const bcrypt = require("bcryptjs");
 const models = require("../models");
 const { createRecord } = require("../helpers/utils");
+const { sendEmail } = require("../helpers/mailer");
 const getUser = async (userUuid, profileId) => {
   let user = await models.User.findOne({
     where: {
@@ -30,7 +31,6 @@ exports.createProject = async (req, res) => {
       let postData = req.body;
       const { userUuid } = req;
       const { profileId } = postData;
-      console.log("Post Data: ", postData, profileId);
       let user = await getUser(userUuid, profileId);
 
       let proj = await models.ProfileForm.create(
@@ -65,6 +65,19 @@ exports.createProject = async (req, res) => {
         }),
         { transaction, include: [{ model: models.FieldValue, as: "values" }] }
       );
+
+      // console.log("Fields Arr: ", fieldsArr);
+      let members = fieldsArr["project_members"];
+      let projectName = fieldsArr["project_name"];
+      console.log("Members: ", members);
+
+      members.value.forEach(async (m) => {
+        await sendEmail(
+          m,
+          "Member of Project",
+          `Dear ${m},<br/> You are added into new project "${projectName}" by your colleague ${user.email}.`
+        );
+      });
 
       res.send({
         message: "Project created successfully!",

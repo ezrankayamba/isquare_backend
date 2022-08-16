@@ -13,6 +13,7 @@ const profileRoutes = require("./routes/profile.routes");
 const commonRoutes = require("./routes/common.routes");
 const registrationRoutes = require("./routes/registration.routes");
 const projectRoutes = require("./routes/project.routes");
+const postRoutes = require("./routes/post.routes");
 
 const app = express();
 app.use(express.json());
@@ -57,6 +58,7 @@ profileRoutes.init(app);
 commonRoutes.init(app);
 registrationRoutes.init(app);
 projectRoutes.init(app);
+postRoutes.init(app);
 
 app.get("/", async (req, res) => {
   console.log("Ping");

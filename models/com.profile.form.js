@@ -31,7 +31,6 @@ module.exports = (sequelize, DataTypes) => {
       sequelize,
       tableName: "profile_forms",
       modelName: "ProfileForm",
-      timestamps: false,
     }
   );
   return ProfileForm;

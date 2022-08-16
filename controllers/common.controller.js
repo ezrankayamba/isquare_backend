@@ -1,5 +1,10 @@
 const { sequelize } = require("../models");
 const models = require("../models");
+let formidable = require("formidable");
+const path = require("path"),
+  fs = require("fs");
+
+const UPLOAD_DIR = path.resolve(__dirname, "..", "..", "uploads");
 
 exports.allSetups = async (req, res) => {
   let all = await models.Setup.findAll();
@@ -69,4 +74,35 @@ exports.deleteSetup = async (req, res) => {
   res.send({
     message: "Deleted successfully!",
   });
+};
+
+exports.attachments = async (req, res) => {
+  let form = new formidable.IncomingForm();
+  form.parse(req, function (error, fields, file) {
+    let filepath = file.fileupload.filepath;
+
+    let newpath = path.join(UPLOAD_DIR, file.fileupload.originalFilename);
+
+    const origin = req.headers.origin;
+    let fileLink = `${origin}/api/common/attachments/${file.fileupload.originalFilename}`;
+
+    //Copy the uploaded file to a custom folder
+    fs.rename(filepath, newpath, function () {
+      //Send a NodeJS file upload confirmation message
+      res.write(
+        JSON.stringify({
+          result: 0,
+          message: "Successfully uploaded a file",
+          link: fileLink,
+        })
+      );
+      res.end();
+    });
+  });
+};
+
+exports.download = async (req, res) => {
+  let { file } = req.params;
+  let newpath = path.join(UPLOAD_DIR, file);
+  res.download(newpath);
 };

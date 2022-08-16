@@ -15,5 +15,7 @@ module.exports = {
     app.post("/api/setups/create", controller.createSetup);
     app.put("/api/setups/:id", controller.updateSetup);
     app.delete("/api/setups/:id", controller.deleteSetup);
+    app.post("/api/common/attachments", controller.attachments);
+    app.get("/api/common/attachments/:file", controller.download);
   },
 };

@@ -2,6 +2,7 @@ const { sequelize } = require("../models");
 const models = require("../models");
 const { createRecord } = require("../helpers/utils");
 exports.createPost = async (req, res) => {
+  console.log("Create new post!");
   try {
     await sequelize.transaction(async (transaction) => {
       let postData = req.body;

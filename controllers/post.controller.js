@@ -8,15 +8,20 @@ exports.createPost = async (req, res) => {
       let postData = req.body;
       const { userUuid } = req;
       const { profileId, category } = postData;
-
-      let post = await models.ProfileForm.create(
-        {
-          name: "POST",
-          category: category,
-          profile_id: profileId,
+      const { postId } = req.params;
+      let values = {
+        name: "POST",
+        category: category,
+        profile_id: profileId,
+      };
+      let post = await models.ProfileForm.findOne({
+        where: {
+          id: postId || 0,
         },
-        { transaction }
-      );
+      }).then(async function (obj) {
+        if (obj) return obj.update(values);
+        return await models.ProfileForm.create(values, { transaction });
+      });
 
       let fieldsArr = postData.fields;
       await models.Field.destroy(

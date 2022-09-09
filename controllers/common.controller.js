@@ -42,6 +42,17 @@ exports.hubs = async (req, res) => {
     setups: hubs,
   });
 };
+exports.incubatees = async (req, res) => {
+  let where = {};
+  let incubatees = await models.Incubatee.findAll({
+    where,
+  });
+
+  res.send({
+    message: "Successfully fetched setups-Incubatee!",
+    setups: incubatees,
+  });
+};
 exports.createSetup = async (req, res) => {
   let params = req.body;
   let s = await models.Setup.create(params);

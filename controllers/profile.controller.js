@@ -133,7 +133,6 @@ exports.getMyProfiles = async (req, res) => {
 };
 
 const saveBase64File = (data, file) => {
-  console.log("Data: ", data);
   let base64Data = data.split(";base64,").pop();
 
   fs.writeFile(

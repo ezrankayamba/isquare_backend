@@ -207,7 +207,7 @@ exports.createAccount = async (req, res) => {
         let inc = await models.Incubatee.create(
           {
             // hub_id: hubId,
-            name: `${incFields.first_name} ${incFields.last_name}`,
+            name: `${postData.fields.first_name} ${postData.fields.last_name}`,
             description: postData.fields.description,
             owner_id: user.id,
           },

@@ -2,10 +2,15 @@
 const { Model } = require("sequelize");
 module.exports = (sequelize, DataTypes) => {
   class ProfileForm extends Model {
-    static associate({ Profile }) {
+    static associate({ Profile, Field }) {
       this.belongsTo(Profile, {
         foreignKey: "profile_id",
         as: "profile",
+      });
+      this.hasMany(Field, {
+        foreignKey: "owner_id",
+        as: "fields",
+        onDelete: "cascade",
       });
     }
     toJSON() {

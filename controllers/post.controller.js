@@ -103,7 +103,64 @@ exports.getMyPosts = async (req, res) => {
     });
   }
 };
+exports.getPostsFiltered = async (req, res) => {
+  try {
+    await sequelize.transaction(async () => {
+      const { userUuid } = req;
+      const { category } = req.params;
+      const { searchValue } = req.body;
+      let posts = await models.ProfileForm.findAll({
+        where: {
+          name: "POST",
+          category: category,
+        },
+        include: [
+          {
+            model: models.Profile,
+            as: "profile",
+            include: [{ model: models.User, as: "owner" }],
+          },
+          {
+            model: models.Field,
+            as: "fields",
+            where: {
+              category: "PROFILEFORM",
+            },
+            include: [
+              {
+                model: models.FieldValue,
+                as: "values",
+              },
+            ],
+          },
+        ],
+        order: [["createdAt", "DESC"]],
+      });
 
+      const filterBy = (p) => {
+        return true;
+        if (searchValue) {
+          let field = p.fields.filter((f) => f.name === searchValue.name)[0];
+          let found = field
+            ? field.values.filter((v) => v.value === searchValue.value)[0]
+            : null;
+          return found ? true : false;
+        }
+
+        return true;
+      };
+      res.send({
+        message: "Posts read successfully!",
+        data: posts.filter((p) => filterBy(p)),
+      });
+    });
+  } catch (err) {
+    console.error("Error: ", err);
+    res.status(400).send({
+      message: err,
+    });
+  }
+};
 exports.getPost = async (req, res) => {
   try {
     await sequelize.transaction(async () => {

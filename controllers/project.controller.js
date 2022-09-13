@@ -107,8 +107,6 @@ exports.getProject = async (req, res) => {
         },
       });
 
-      console.log("Project: ", proj);
-
       if (!proj) {
         res.status(200).send({
           result: -1,
@@ -125,8 +123,6 @@ exports.getProject = async (req, res) => {
         },
         include: ["values"],
       });
-
-      console.log("Project: ", proj);
 
       res.send({
         message: "Project created successfully!",

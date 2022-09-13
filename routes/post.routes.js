@@ -12,6 +12,7 @@ module.exports = {
     app.post("/api/posts/update/:postId", controller.createPost);
     app.get("/api/posts/read/:profileId/:category", controller.getPost);
     app.get("/api/posts/myposts/:profileId/:category", controller.getMyPosts);
+    app.post("/api/posts/filtered/:category", controller.getPostsFiltered);
     app.delete("/api/posts/delete/:profileId/:postId", controller.deletePost);
   },
 };

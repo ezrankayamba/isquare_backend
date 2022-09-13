@@ -191,6 +191,15 @@ exports.createAccount = async (req, res) => {
       if (roleName === "Hub Manager") {
         let data = { ...postData.fields, owner_id: user.id };
         data.hub_id = undefined;
+        let inc = await models.Hub.create(
+          {
+            // hub_id: hubId,
+            name: postData.fields.hub_name || null,
+            description: postData.fields.hub_description || null,
+            owner_id: user.id,
+          },
+          { transaction }
+        );
       } else if (roleName === "Incubatee") {
         let data = { ...postData.fields, owner_id: user.id };
         let hubId = postData.fields.hubId;
@@ -198,20 +207,12 @@ exports.createAccount = async (req, res) => {
         let inc = await models.Incubatee.create(
           {
             // hub_id: hubId,
-            name: postData.fields.name || null,
+            name: `${incFields.first_name} ${incFields.last_name}`,
             description: postData.fields.description,
             owner_id: user.id,
           },
           { transaction }
         );
-        // await models.Enrollment.create(
-        //   {
-        //     hub_id: hubId,
-        //     incubatee_id: inc.id,
-        //     status: "Requested",
-        //   },
-        //   { transaction }
-        // );
       } else {
         //Other profiles
         let data = { ...postData.fields, owner_id: user.id };
@@ -305,23 +306,16 @@ exports.updateProfile = async (req, res) => {
           },
         });
         let hubId = postData.fields.hubId;
+        let incFields = postData.fields;
         await inc.update(
           {
             // hub_id: hubId,
-            name: postData.fields.name || null,
+            name: `${incFields.first_name} ${incFields.last_name}`,
             description: postData.fields.description,
             owner_id: user.id,
           },
           { transaction }
         );
-        // await models.Enrollment.create(
-        //   {
-        //     hub_id: hubId,
-        //     incubatee_id: inc.id,
-        //     status: "Requested",
-        //   },
-        //   { transaction }
-        // );
       } else {
         //Other profiles
       }

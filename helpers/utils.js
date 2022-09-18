@@ -52,7 +52,7 @@ function createValue(value) {
       value && Array.isArray(value)
         ? value.map((v) => {
             return {
-              value: v.name,
+              value: v.id || v.name,
               extra: v.extra,
             };
           })

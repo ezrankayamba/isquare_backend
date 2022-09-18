@@ -17,7 +17,6 @@ async function profileInfo(p) {
   switch (p.role.name) {
     case "Hub Manager":
       let hubs = await owner.getHubs();
-      console.log("Hubs: ", hubs);
       result = {
         ...mashall(p),
         entity: hubs.length ? mashall(hubs[0]) : undefined,

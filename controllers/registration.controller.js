@@ -99,7 +99,7 @@ function createValue(value) {
       value && Array.isArray(value)
         ? value.map((v) => {
             return {
-              value: v.name,
+              value: v.id,
               extra: v.extra,
             };
           })
@@ -156,6 +156,7 @@ exports.createAccount = async (req, res) => {
         userData[f] = f === "password" ? passwordHash(value || "") : value;
         delete postData.fields[f];
       });
+
       let user = await models.User.findOne({
         where: {
           uuid: req.userUuid || "None",
@@ -189,9 +190,7 @@ exports.createAccount = async (req, res) => {
 
       //2. Register profile
       if (roleName === "Hub Manager") {
-        let data = { ...postData.fields, owner_id: user.id };
-        data.hub_id = undefined;
-        let inc = await models.Hub.create(
+        let hub = await models.Hub.create(
           {
             // hub_id: hubId,
             name: postData.fields.hub_name || null,
@@ -201,30 +200,22 @@ exports.createAccount = async (req, res) => {
           { transaction }
         );
       } else if (roleName === "Incubatee") {
-        let data = { ...postData.fields, owner_id: user.id };
-        let hubId = postData.fields.hubId;
-        data.hub_id = undefined;
         let inc = await models.Incubatee.create(
           {
             // hub_id: hubId,
-            name: `${postData.fields.first_name} ${postData.fields.last_name}`,
-            description: postData.fields.description,
+            name: `${userData.first_name} ${userData.last_name}`,
             owner_id: user.id,
           },
           { transaction }
         );
       } else {
         //Other profiles
-        let data = { ...postData.fields, owner_id: user.id };
-        data.hub_id = undefined;
         profile.update({
           approval: "APPROVED",
         });
       }
 
       let fieldsArr = postData.fields;
-      delete fieldsArr["name"];
-      delete fieldsArr["description"];
       await models.Field.bulkCreate(
         Object.entries(fieldsArr).map(([key, value]) =>
           createRecord(profile, key, value)
@@ -305,12 +296,11 @@ exports.updateProfile = async (req, res) => {
             owner_id: user.id,
           },
         });
-        let hubId = postData.fields.hubId;
-        let incFields = postData.fields;
+
         await inc.update(
           {
             // hub_id: hubId,
-            name: `${incFields.first_name} ${incFields.last_name}`,
+            name: `${postData.first_name} ${postData.last_name}`,
             description: postData.fields.description,
             owner_id: user.id,
           },

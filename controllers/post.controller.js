@@ -138,7 +138,7 @@ exports.getPostsFiltered = async (req, res) => {
       });
 
       const filterBy = (p) => {
-        return true;
+        // return true;
         if (searchValue) {
           let field = p.fields.filter((f) => f.name === searchValue.name)[0];
           let found = field

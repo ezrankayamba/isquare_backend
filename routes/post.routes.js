@@ -10,6 +10,7 @@ module.exports = {
     });
     app.post("/api/posts/create", controller.createPost);
     app.post("/api/posts/update/:postId", controller.createPost);
+    app.post("/api/posts/approval/:postId", controller.postApproval);
     app.get("/api/posts/read/:profileId/:category", controller.getPost);
     app.get("/api/posts/myposts/:profileId/:category", controller.getMyPosts);
     app.post("/api/posts/filtered/:category", controller.getPostsFiltered);

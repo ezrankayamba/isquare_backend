@@ -2,6 +2,7 @@ const models = require("../models");
 const bcrypt = require("bcryptjs");
 var crypto = require("crypto");
 var jwt = require("jsonwebtoken");
+const { profileInfo } = require("./profile.controller");
 const sendVerification = async (user, action = "SIGNUP") => {
   let seed = crypto.randomBytes(20);
   let hash = crypto.createHash("sha256").update(seed).digest("hex");
@@ -11,6 +12,7 @@ const sendVerification = async (user, action = "SIGNUP") => {
     action,
   });
 };
+
 exports.signup = async (req, res) => {
   try {
     let roleName = req.body.role;
@@ -44,7 +46,7 @@ exports.signup = async (req, res) => {
 };
 exports.signin = async (req, res) => {
   let { email, password } = req.body;
-  console.log("User: ", email);
+  // console.log("User: ", email);
   try {
     let user = await models.User.findOne({
       where: { email },
@@ -144,24 +146,37 @@ exports.me = async (req, res) => {
     where: {
       uuid: userUuid,
     },
-    include: {
-      model: models.Profile,
-      as: "profiles",
-      include: [
-        {
-          model: models.Role,
-          as: "role",
-        },
-        {
-          model: models.Field,
-          as: "fields",
-          include: {
-            model: models.FieldValue,
-            as: "values",
+    include: [
+      {
+        model: models.Profile,
+        as: "profiles",
+        include: [
+          {
+            model: models.Role,
+            as: "role",
           },
-        },
-      ],
-    },
+          {
+            model: models.Field,
+            as: "fields",
+            include: {
+              model: models.FieldValue,
+              as: "values",
+            },
+          },
+        ],
+      },
+    ],
   });
+  let profiles = await Promise.all(
+    user.profiles.map(async (p) => {
+      return await profileInfo(p);
+    })
+  );
+  let newUser = {
+    profiles,
+  };
+  user = JSON.parse(JSON.stringify(user));
+  user.profiles = profiles;
+  // console.log("User: ", user);
   res.send(user);
 };

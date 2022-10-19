@@ -35,6 +35,7 @@ exports.hubs = async (req, res) => {
   }
   let hubs = await models.Hub.findAll({
     where,
+    include: "profile",
   });
 
   res.send({
@@ -43,9 +44,30 @@ exports.hubs = async (req, res) => {
   });
 };
 exports.incubatees = async (req, res) => {
+  let postData = req.body;
+  const { userUuid } = req;
+  let user = await models.User.findOne({
+    where: {
+      uuid: userUuid,
+    },
+  });
+
   let where = {};
   let incubatees = await models.Incubatee.findAll({
     where,
+    include: [
+      {
+        model: models.ProfileForm,
+        as: "forms",
+        where: { status: "APPROVED", approval_by: user.id },
+        include: [
+          {
+            model: models.Profile,
+            as: "profile",
+          },
+        ],
+      },
+    ],
   });
 
   res.send({

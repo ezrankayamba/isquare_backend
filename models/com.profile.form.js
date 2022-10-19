@@ -31,6 +31,18 @@ module.exports = (sequelize, DataTypes) => {
       status: {
         type: DataTypes.STRING,
       },
+      remark: {
+        type: DataTypes.STRING,
+      },
+      request_to: {
+        type: DataTypes.INTEGER,
+      },
+      approval_by: {
+        type: DataTypes.INTEGER,
+      },
+      owner_id: {
+        type: DataTypes.INTEGER,
+      },
     },
     {
       sequelize,

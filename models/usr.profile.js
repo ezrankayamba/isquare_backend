@@ -2,7 +2,7 @@
 const { Model } = require("sequelize");
 module.exports = (sequelize, DataTypes) => {
   class Profile extends Model {
-    static associate({ User, Role, Field, ProfileAttachment, Hub }) {
+    static associate({ User, Role, Field, ProfileAttachment, Hub, Incubatee }) {
       this.belongsTo(User, {
         foreignKey: "owner_id",
         as: "owner",
@@ -22,6 +22,10 @@ module.exports = (sequelize, DataTypes) => {
       this.hasMany(Hub, {
         foreignKey: "owner_id",
         as: "hubs",
+      });
+      this.hasMany(Incubatee, {
+        foreignKey: "owner_id",
+        as: "incubatees",
       });
     }
     toJSON() {

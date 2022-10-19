@@ -40,10 +40,10 @@ async function profileInfo(p) {
   }
 
   result.name = p.role.name;
-  delete result["role"];
+  // delete result["role"];
   return result;
 }
-
+exports.profileInfo = async (p) => await profileInfo(p);
 exports.download = async (req, res) => {
   const file = `${__dirname}/uploads/dramaticpenguin.MOV`;
   res.download(file); // Set disposition and send it.

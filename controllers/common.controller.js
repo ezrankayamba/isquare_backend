@@ -59,7 +59,8 @@ exports.incubatees = async (req, res) => {
       {
         model: models.ProfileForm,
         as: "forms",
-        where: { status: "APPROVED", approval_by: user.id },
+        // where: { status: "APPROVED", approval_by: user.id },
+        where: { status: "APPROVED" },
         include: [
           {
             model: models.Profile,

@@ -155,7 +155,7 @@ exports.getPostsFiltered = async (req, res) => {
       });
 
       const filterBy = async (p) => {
-        if (searchValue) {
+        if (searchValue && searchValue.field) {
           let field = p.fields.filter(
             (f) => f.name === searchValue.field.name
           )[0];

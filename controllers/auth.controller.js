@@ -167,11 +167,13 @@ exports.me = async (req, res) => {
       },
     ],
   });
-  let profiles = await Promise.all(
-    user.profiles.map(async (p) => {
-      return await profileInfo(p);
-    })
-  );
+  let profiles = user
+    ? await Promise.all(
+        user.profiles.map(async (p) => {
+          return await profileInfo(p);
+        })
+      )
+    : [];
   let newUser = {
     profiles,
   };
